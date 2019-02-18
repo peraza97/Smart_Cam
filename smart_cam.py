@@ -2,14 +2,10 @@ import cv2
 import dlib
 import numpy as np
 
-face_model = cv2.CascadeClassifier('models/front_face.xml')
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("models/shapes_predict.dat")
 
-def grab_faces(img,dlib_m=False):
-    if dlib_m == False:
-        return face_model.detectMultiScale(img, 1.3, 5)
-    else:
+def grab_faces(img):
         return detector(img, 1)
 
 def convert_to_rect(dlib_rect):
@@ -18,18 +14,12 @@ def convert_to_rect(dlib_rect):
             return (pt.x,pt.y, pt2.x-pt.x,pt2.y-pt.y)
 
 
-def extract_landmarks(img,faces, dlib_m=False):
+def extract_landmarks(img,faces):
     my_dict = []
-    if dlib_m == False:
-        for (x,y,w,h) in faces:
-            rect = dlib.rectangle(x,y,x+w,y+h)
-            landmarks = np.matrix([[p.x, p.y] for p in predictor(img, rect).parts()])
-            my_dict.append({"rect": (x,y,w,h),"landmarks": landmarks})
-    else:
-        for rect in faces:
-            (x,y,w,h) = convert_to_rect(rect)
-            landmarks = np.matrix([[p.x, p.y] for p in predictor(img, rect).parts()])
-            my_dict.append({"rect": (x,y,w,h),"landmarks": landmarks})
+    for rect in faces:
+        (x,y,w,h) = convert_to_rect(rect)
+        landmarks = np.matrix([[p.x, p.y] for p in predictor(img, rect).parts()])
+        my_dict.append({"rect": (x,y,w,h),"landmarks": landmarks})
     return my_dict
 
 def draw_features(img, landmarks):
@@ -48,8 +38,8 @@ def main():
         ret, frame = cap.read();
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces= grab_faces(gray,1)
-        fts = extract_landmarks(gray, faces,1)
+        faces= grab_faces(gray)
+        fts = extract_landmarks(gray, faces)
         draw_features(frame, fts)  
 
         cv2.imshow("Feed", frame)
