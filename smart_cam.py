@@ -46,7 +46,6 @@ class Face:
         fts = self.landmarks[48:68]
         ##do our shit
 
-
     def draw_face(self,img):
         (x,y,w,h) = self.convert_to_rect()
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -80,8 +79,8 @@ def main():
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
 
         faces = [Face(rect,frame) for rect in dlib_rects] 
-
-
+        for face in faces:
+            face.draw_smile(frame)
 
         cv2.imshow("Feed", frame)
         k = cv2.waitKey(1)
