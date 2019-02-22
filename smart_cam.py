@@ -8,7 +8,6 @@ from scipy.spatial import distance as dist
 #CREATE DETECTOR
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("models/shapes_predict.dat")
-smile_model = cv2.CascadeClassifier("models/smile.xml")
 
 def grab_faces(img):
         return detector(img, 1)
@@ -92,21 +91,6 @@ class Face:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (0, 255, 255), -1)
 
-    def draw_smile_harr(self,img):
-        (x,y,w,h) = self.convert_to_rect()
-        roi_gray = img[y:y+h,x:x+w]
-
-        smile = smile_model.detectMultiScale(
-            roi_gray,
-            scaleFactor=1.7,
-            minNeighbors=22,
-            minSize=(25, 25),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        for (x1, y1, w1, h1) in smile:
-            cv2.rectangle(roi_gray, (x1, y1), (x1 + w1, y1 + h1), (0, 0, 255), 1)
-        cv2.imshow("ROI", roi_gray)
-
 
 def main():
     c = cameraFeed().start()
@@ -123,7 +107,7 @@ def main():
         faces = [Face(rect,frame) for rect in dlib_rects] 
         try:
             for face in faces:
-                face.draw_smile_harr(frame)
+                face.draw_face(frame)
         except:
             print("Unexpected error:", sys.exc_info()[0])
 
