@@ -77,8 +77,10 @@ class Face:
         (x,y,w,h) = self.convert_to_rect()
         if self.detect_smile():
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            return True;
         else:
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            return False;
 
     def draw_landmarks(self, img):
         for pt in self.landmarks:
@@ -92,32 +94,52 @@ class Face:
             cv2.circle(img, pos, 2, (0, 255, 255), -1)
 
 
+def is_everyone_smiling(faces,frame):
+    var = True
+    if len(faces) == 0: #empy face list
+        return False
+    for face in faces: #iterate over faces
+        if not face.draw_face(frame): #if someone is not, return false
+            var = False
+    return var #if you made it here, return true
+
 def main():
     c = cameraFeed().start()
+
     take = True
+
     while True:
         frame = c.read()
         take = not take
         if not take:
             continue
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
-
         faces = [Face(rect,frame) for rect in dlib_rects] 
-        try:
-            for face in faces:
-                face.draw_face(frame)
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
 
-        #cv2.imshow("Feed", frame)
-        k = cv2.waitKey(1)
-        if k & 0xFF == ord('q'):
-            c.stop()
-            break 
-        elif k & 0xFF == ord('s'):
-            cv2.imwrite( "./photos/detectedSmile.jpg", frame);
+        all_smiles = is_everyone_smiling(faces,frame)
+
+        cv2.imshow("Feed", frame)
+
+        if all_smiles:
+            print("Do you want to save this image? ")
+            k = cv2.waitKey()
+            if k & 0xFF == ord('s'):
+                cv2.imwrite("all_smiles.png",frame)
+            elif k & 0xFF == ord('n'):
+                continue
+            elif k & 0xFF == ord('q'):
+                c.stop()
+                break
+            else:
+                continue
+        else:
+            k = cv2.waitKey(1)
+            if k & 0xFF == ord('q'):
+                c.stop()
+                break 
 
     cv2.destroyAllWindows()
 
