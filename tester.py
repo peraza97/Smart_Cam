@@ -3,14 +3,7 @@ import dlib
 import numpy as np
 from threading import Thread
 from scipy.spatial import distance as dist
-
-
-#CREATE DETECTOR
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("models/shapes_predict.dat")
-
-def grab_faces(img):
-        return detector(img, 1)
+import argparse as argp
 
 #run video feed on a different thread
 class cameraFeed():
@@ -36,6 +29,14 @@ class cameraFeed():
     #stop function
     def stop(self):
         self.stopped = True
+
+
+#CREATE DETECTOR
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor("models/shapes_predict.dat")
+
+def grab_faces(img):
+        return detector(img, 1)
 
 class Face:
     def __init__(self, dlib_rect, img):
@@ -93,14 +94,14 @@ class Face:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (0, 255, 255), -1)
 
-def is_everyone_smiling(faces,frame):
-    var = True
-    if len(faces) == 0: #empy face list
-        return False
-    for face in faces: #iterate over faces
-        if not face.draw_face(frame): #if someone is not, return false
-            var = False
-    return var #if you made it here, return true
+    def draw_smile_line(self, img):
+        points = self.landmarks[48:55]
+        contours = [np.array(points, dtype=np.int32)]
+        for cnt in contours:
+            cv2.drawContours(img,[cnt],0,(0,255,0),2)
+            area = cv2.contourArea(cnt)
+            print(area)
+
 
 def main():
     c = cameraFeed().start()
@@ -117,28 +118,15 @@ def main():
 
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
         faces = [Face(rect,frame) for rect in dlib_rects] 
-
-        all_smiles = is_everyone_smiling(faces,frame)
+        for face in faces:
+            face.draw_smile_line(frame)
 
         cv2.imshow("Feed", frame)
 
-        if all_smiles:
-            print("Do you want to save this image? ")
-            k = cv2.waitKey()
-            if k & 0xFF == ord('s'):
-                cv2.imwrite("all_smiles.png",frame)
-            elif k & 0xFF == ord('n'):
-                continue
-            elif k & 0xFF == ord('q'):
-                c.stop()
-                break
-            else:
-                continue
-        else:
-            k = cv2.waitKey(1)
-            if k & 0xFF == ord('q'):
-                c.stop()
-                break 
+        k = cv2.waitKey(1)
+        if k & 0xFF == ord('q'):
+            c.stop()
+            break 
 
     cv2.destroyAllWindows()
 

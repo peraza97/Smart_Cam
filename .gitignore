@@ -1,2 +1,4 @@
-models/
-photos/
+*
+!.gitignore
+!*.py
+!README.md
