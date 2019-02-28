@@ -59,16 +59,28 @@ class Face:
         tr = self.dlib_rect.tr_corner()
         bl = self.dlib_rect.bl_corner()
         br = self.dlib_rect.br_corner()
-        return (tl.x,tl.y,tl.x-tr.x,tr.y-br.y)
+        return (tl.x, tl.y,tr.x - tl.x , br.y-tl.y )
 
-    def draw_smile_landmarks(self,img):
-        fts = self.landmarks[48:68]
+    def draw_whole_landmarks(self,img):
+        fts = self.landmarks 
+        #smile is self.landmarks[48:68] 
         for pt in fts:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (0, 255, 255), -1)
 
+    def draw_landmarks(self, img, fts):
+        for pt in fts:
+            pos = (pt[0,0], pt[0,1])
+            cv2.circle(img, pos, 2, (0, 255, 255), -1)
+
+
     def is_smiling(self,img):
-        print("is smiling")
+        (x,y,w,h) = self.convert_to_rect()
+        ratio = self.ratio()
+        if ratio > 10:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        else:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
     def draw_upperlip(self, img):
         points = self.landmarks[48:55]
@@ -78,24 +90,25 @@ class Face:
         box = np.int0(box)
         cv2.drawContours(img,[box],0,(0,0,255),2)
 
-    def ratio(self,img):
+    def ratio(self):
         points = self.landmarks[48:55]
         cnt = np.array(points, dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
-        cv2.drawContours(img,[box],0,(0,0,255),2)
         x,y = box[0] #bottom left
         x1,y1 = box[1] #top left
         x2,y2 = box[2] #top right
         x3,y3 = box[3] #bottom right
+
         h = dist.euclidean((x,y), (x1,y1))
         w = dist.euclidean((x1,y1),(x2,y2))
         bbx,bby,bbw,bbh = self.convert_to_rect()
+        r = (w/bbw)/(h/bbh)
         print("H: {}, W: {}. w/h: {}".format(h,w,w/h))
         print("BBW: {}, BBH: {}".format(bbw,bbh))
-        print("Normalize, W/H: {}".format( (w/bbw)/(h/bbh)))
-        print()
+        print("Normalize, W/H: {}".format(r ))
+        return r
 
 def main():
     c = cameraFeed().start()
@@ -113,9 +126,7 @@ def main():
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
         faces = [Face(rect,frame) for rect in dlib_rects] 
         for face in faces:
-            face.draw_smile_landmarks(frame)
-            #face.is_smiling(frame)
-            face.ratio(frame)
+            face.is_smiling(frame)
 
         cv2.imshow("Feed", frame)
 
