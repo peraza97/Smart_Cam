@@ -105,7 +105,7 @@ class Face:
         w = dist.euclidean((x1,y1),(x2,y2))
         bbx,bby,bbw,bbh = self.convert_to_rect()
         r = (w/bbw)/(h/bbh)
-        print("H: {}, W: {}. w/h: {}".format(h,w,w/h))
+        print("H: {}, W: {}".format(h,w))
         print("BBW: {}, BBH: {}".format(bbw,bbh))
         print("Normalize, W/H: {}".format(r ))
         return r
