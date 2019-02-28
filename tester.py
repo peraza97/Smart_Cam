@@ -4,6 +4,10 @@ import numpy as np
 from threading import Thread
 from scipy.spatial import distance as dist
 import argparse as argp
+from fractions import Fraction
+
+RED = (0,0,255)
+GREEN = (0,255,0)
 
 #run video feed on a different thread
 class cameraFeed():
@@ -38,6 +42,19 @@ predictor = dlib.shape_predictor("models/shapes_predict.dat")
 def grab_faces(img):
         return detector(img, 1)
 
+def normalized_a_r(cnt,fw,fh):
+    x,y,w,h = cv2.boundingRect(cnt)
+    #print("FW: {}, FH: {}, w: {}, h: {} ".format(fw,fh,w,h))
+    print("w/fw: {}, h/fh: {}".format(float(Fraction(w,fw)), float(Fraction(h,fh))))
+    aspect_ratio = (float(w)/fw)/(float(h)/fh)
+    print("A_R: {} \n".format(aspect_ratio))
+    return aspect_ratio
+
+def draw_rect(img, x,y,w,h,color):
+    cv2.rectangle(img, (x, y), (x + w, y + h),color, 2)
+
+
+
 class Face:
     def __init__(self, dlib_rect, img):
         self.dlib_rect = dlib_rect
@@ -51,57 +68,31 @@ class Face:
         pt2 = self.dlib_rect.br_corner()
         return (pt.x,pt.y, pt2.x-pt.x,pt2.y-pt.y)
 
-    def detect_smile(self):
-        fts = self.landmarks[48:68]
-
-        #0-67 is my list
-        mouth_left = self.landmarks[48]
-        mouth_right = self.landmarks[54]
-
-        left_v = self.landmarks[50]
-        left_d = self.landmarks[58]
-
-        mid_v = self.landmarks[51]
-        mid_d = self.landmarks[57]
-
-        right_v = self.landmarks[52]
-        right_d = self.landmarks[56]
-
-        ratio = dist.euclidean(left_v,left_d) + dist.euclidean(mid_v,mid_d) + dist.euclidean(right_v,right_d)
-        ratio = ratio/(3 * dist.euclidean(mouth_left,mouth_right))
-        print(ratio)
-
-        return ratio > .38 or ratio < .25
-        ##do our shit
-
-    def draw_face(self,img):
-        (x,y,w,h) = self.convert_to_rect()
-        if self.detect_smile():
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            return True;
-        else:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            return False;
-
-    def draw_landmarks(self, img):
-        for pt in self.landmarks:
-            pos = (pt[0,0], pt[0,1])
-            cv2.circle(img, pos, 2, (0, 255, 255), -1)
-
     def draw_smile_landmarks(self,img):
         fts = self.landmarks[48:68]
         for pt in fts:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (0, 255, 255), -1)
 
+    def is_smiling(self,img):
+        (x,y,w,h) = self.convert_to_rect()
+        points = self.landmarks[48:55]
+        upper_lip = np.array(points, dtype=np.int32)
+        a_r = normalized_a_r(upper_lip, w, h)
+        self.draw_smile_line(img)
+        if a_r > 10:
+            draw_rect(img,x,y,w,h,GREEN)
+        else:
+            draw_rect(img,x,y,w,h,RED)
+
+
     def draw_smile_line(self, img):
+        (x,y,w,h) = self.convert_to_rect()
         points = self.landmarks[48:55]
         contours = [np.array(points, dtype=np.int32)]
         for cnt in contours:
             cv2.drawContours(img,[cnt],0,(0,255,0),2)
-            area = cv2.contourArea(cnt)
-            print(area)
-
+            #print(area)
 
 def main():
     c = cameraFeed().start()
@@ -119,7 +110,7 @@ def main():
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
         faces = [Face(rect,frame) for rect in dlib_rects] 
         for face in faces:
-            face.draw_smile_line(frame)
+            face.is_smiling(frame)
 
         cv2.imshow("Feed", frame)
 
@@ -127,6 +118,9 @@ def main():
         if k & 0xFF == ord('q'):
             c.stop()
             break 
+
+        if k & 0xFF == ord('s'):
+            cv2.imwrite("photos/all_smiles.png",frame)
 
     cv2.destroyAllWindows()
 
