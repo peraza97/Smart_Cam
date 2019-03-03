@@ -76,7 +76,7 @@ class Face:
 
     def is_smiling(self,img):
         (x,y,w,h) = self.convert_to_rect()
-        ratio = self.ratio(img)
+        ratio = self.ratio()
         if ratio > 10:
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         else:
@@ -90,9 +90,8 @@ class Face:
         box = np.int0(box)
         cv2.drawContours(img,[box],0,(0,0,255),2)
 
-    def ratio(self,img):
-        points = self.landmarks[48:55]
-        cnt = np.array(points, dtype=np.int32)
+    def draw_mouth_bbox(self, img):
+        cnt = np.array(self.landmarks[48:55], dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
@@ -100,14 +99,29 @@ class Face:
         x1,y1 = box[1] #top left
         x2,y2 = box[2] #top right
         x3,y3 = box[3] #bottom right
-        font = cv2.FONT_HERSHEY_SIMPLEX
+
         cv2.circle(img,(x,y), 3, (0,0,255), -1)
         cv2.circle(img,(x1,y1), 3, (255,0,0), -1)
         cv2.circle(img,(x2,y2), 3, (255,0,0), -1)
         cv2.circle(img,(x3,y3), 3, (0,0,255), -1)
+
+    def ratio(self):
+        bbx,bby,bbw,bbh = self.convert_to_rect()
+        cnt = np.array(self.landmarks[48:55], dtype=np.int32)
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        x,y = box[0] #bottom left
+        x1,y1 = box[1] #top left
+        x2,y2 = box[2] #top right
+        x3,y3 = box[3] #bottom right
+
         h = dist.euclidean((x,y), (x1,y1))
         w = dist.euclidean((x1,y1),(x2,y2))
-        bbx,bby,bbw,bbh = self.convert_to_rect()
+
+        if h > w:
+            h,w = w,h
+
         r = (w/bbw)/(h/bbh)
         print("H: {}, W: {}".format(h,w))
         print("BBW: {}, BBH: {}".format(bbw,bbh))
