@@ -45,7 +45,6 @@ def grab_faces(img):
 def draw_rect(img, x,y,w,h,color):
     cv2.rectangle(img, (x, y), (x + w, y + h),color, 2)
 
-
 class Face:
     def __init__(self, dlib_rect, img):
         self.dlib_rect = dlib_rect
@@ -96,7 +95,15 @@ class Face:
         cv2.circle(img,(x3,y3), 3, RED, -1)
 
     def ratio(self):
-        bbx,bby,bbw,bbh = self.convert_to_rect()
+
+        pt = self.landmarks[0]
+        pt1 = self.landmarks[16]
+        pt2 = self.landmarks[24]
+        pt3 = self.landmarks[8]
+        
+        bbw = pt1[0,0] - pt[0,0]
+        bbh = pt3[0,1] - pt2[0,1]
+
         cnt = np.array(self.landmarks[48:55], dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
