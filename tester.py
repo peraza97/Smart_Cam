@@ -134,6 +134,8 @@ class Face:
         l_ratio = lh/lw
         r_ratio = rh/rw
 
+        print("L: {}, R: {}".format(l_ratio,r_ratio))
+
         return l_ratio and r_ratio
 
 def main():
