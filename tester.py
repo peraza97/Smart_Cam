@@ -136,7 +136,7 @@ class Face:
 
         print("L: {}, R: {}".format(l_ratio,r_ratio))
 
-        return l_ratio and r_ratio
+        return l_ratio > .20 and r_ratio > .20
 
 def main():
     c = cameraFeed().start()
