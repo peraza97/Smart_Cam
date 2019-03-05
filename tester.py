@@ -8,6 +8,7 @@ from fractions import Fraction
 
 RED = (0,0,255)
 GREEN = (0,255,0)
+BLUE = (255,0,0)
 
 #run video feed on a different thread
 class cameraFeed():
@@ -61,34 +62,18 @@ class Face:
         br = self.dlib_rect.br_corner()
         return (tl.x, tl.y,tr.x - tl.x , br.y-tl.y )
 
-    def draw_whole_landmarks(self,img):
-        fts = self.landmarks 
-        #smile is self.landmarks[48:68] 
-        for pt in fts:
-            pos = (pt[0,0], pt[0,1])
-            cv2.circle(img, pos, 2, (0, 255, 255), -1)
-
     def draw_landmarks(self, img, fts):
         for pt in fts:
             pos = (pt[0,0], pt[0,1])
-            cv2.circle(img, pos, 2, (0, 255, 255), -1)
-
+            cv2.circle(img, pos, 2, (255, 255, 255), -1)
 
     def is_smiling(self,img):
         (x,y,w,h) = self.convert_to_rect()
         ratio = self.ratio()
-        if ratio > 10:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        if ratio > 8.5:
+            cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
         else:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-
-    def draw_upperlip(self, img):
-        points = self.landmarks[48:55]
-        cnt = np.array(points, dtype=np.int32)
-        rect = cv2.minAreaRect(cnt)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        cv2.drawContours(img,[box],0,(0,0,255),2)
+            cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
 
     def draw_mouth_bbox(self, img):
         cnt = np.array(self.landmarks[48:55], dtype=np.int32)
@@ -100,10 +85,15 @@ class Face:
         x2,y2 = box[2] #top right
         x3,y3 = box[3] #bottom right
 
-        cv2.circle(img,(x,y), 3, (0,0,255), -1)
-        cv2.circle(img,(x1,y1), 3, (255,0,0), -1)
-        cv2.circle(img,(x2,y2), 3, (255,0,0), -1)
-        cv2.circle(img,(x3,y3), 3, (0,0,255), -1)
+        self.draw_landmarks(img, self.landmarks)
+
+        cv2.line(img,(x,y),(x1,y1),GREEN,1)
+        cv2.line(img,(x1,y1),(x2,y2),GREEN,1)
+
+        cv2.circle(img,(x,y), 3, RED, -1)
+        cv2.circle(img,(x1,y1), 3, BLUE, -1)
+        cv2.circle(img,(x2,y2), 3, BLUE, -1)
+        cv2.circle(img,(x3,y3), 3, RED, -1)
 
     def ratio(self):
         bbx,bby,bbw,bbh = self.convert_to_rect()
@@ -123,9 +113,8 @@ class Face:
             h,w = w,h
 
         r = (w/bbw)/(h/bbh)
-        print("H: {}, W: {}".format(h,w))
-        print("BBW: {}, BBH: {}".format(bbw,bbh))
-        print("Normalize, W/H: {}".format(r ))
+        print("H: {}, W: {}, BBW: {}, BBH:{}".format(int(h),int(w), int(bbw),int(bbh)))
+        print("Norm ratio: {0:.2f}".format(r))
         print()
         return r
 
@@ -139,16 +128,13 @@ def main():
         take = not take
         if not take:
             continue
-
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         dlib_rects = grab_faces(gray) #returns dliib rectangle for faces
         faces = [Face(rect,frame) for rect in dlib_rects] 
         for face in faces:
             face.is_smiling(frame)
-
+            face.draw_mouth_bbox(frame)
         cv2.imshow("Feed", frame)
-
         k = cv2.waitKey(1)
         if k & 0xFF == ord('q'):
             c.stop()
