@@ -69,7 +69,7 @@ class Face:
     def is_smiling(self,img):
         (x,y,w,h) = self.convert_to_rect()
         ratio = self.ratio()
-        if ratio > 8.5:
+        if ratio > 8.5 and self.eye_ratio():
             cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
         else:
             cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
@@ -94,17 +94,8 @@ class Face:
         cv2.circle(img,(x2,y2), 3, BLUE, -1)
         cv2.circle(img,(x3,y3), 3, RED, -1)
 
-    def ratio(self):
-
-        pt = self.landmarks[0]
-        pt1 = self.landmarks[16]
-        pt2 = self.landmarks[24]
-        pt3 = self.landmarks[8]
-        
-        bbw = pt1[0,0] - pt[0,0]
-        bbh = pt3[0,1] - pt2[0,1]
-
-        cnt = np.array(self.landmarks[48:55], dtype=np.int32)
+    def grab_dims(self, fts):
+        cnt = np.array(fts, dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
@@ -112,18 +103,38 @@ class Face:
         x1,y1 = box[1] #top left
         x2,y2 = box[2] #top right
         x3,y3 = box[3] #bottom right
-
         h = dist.euclidean((x,y), (x1,y1))
         w = dist.euclidean((x1,y1),(x2,y2))
-
         if h > w:
             h,w = w,h
+        return w,h
+
+    def ratio(self):
+
+        pt = self.landmarks[0]
+        pt1 = self.landmarks[16]
+        pt2 = self.landmarks[24]
+        pt3 = self.landmarks[8]
+
+        bbw = pt1[0,0] - pt[0,0]
+        bbh = pt3[0,1] - pt2[0,1]
+
+        w,h = self.grab_dims(self.landmarks[48:55])
 
         r = (w/bbw)/(h/bbh)
-        print("H: {}, W: {}, BBW: {}, BBH:{}".format(int(h),int(w), int(bbw),int(bbh)))
-        print("Norm ratio: {0:.2f}".format(r))
-        print()
+        #print("H: {}, W: {}, BBW: {}, BBH:{}".format(int(h),int(w), int(bbw),int(bbh)))
+        #print("Norm ratio: {0:.2f}".format(r))
+        #print()
         return r
+
+    def eye_ratio(self):
+        lw, lh = self.grab_dims(self.landmarks[36:42])
+        rw, rh = self.grab_dims(self.landmarks[42:48])
+
+        l_ratio = lh/lw
+        r_ratio = rh/rw
+
+        return l_ratio and r_ratio
 
 def main():
     c = cameraFeed().start()
@@ -141,6 +152,7 @@ def main():
         for face in faces:
             face.is_smiling(frame)
             face.draw_mouth_bbox(frame)
+            face.eye_ratio()
         cv2.imshow("Feed", frame)
         k = cv2.waitKey(1)
         if k & 0xFF == ord('q'):
