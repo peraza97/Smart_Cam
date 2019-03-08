@@ -21,11 +21,7 @@ class Face:
         self.landmarks = self.extract_landmarks(img)
     
     def extract_landmarks(self, img):
-        x,y,w,h = self.convert_to_rect()
-        tmp = img[y:y+h,x:x+w]
-        cv2.imshow("cropped", tmp)
-        cv2.waitKey()
-        return np.matrix([[p.x, p.y] for p in predictor(tmp).parts()])
+        return np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
 
     def convert_to_rect(self):
         tl = self.dlib_rect.tl_corner()
@@ -38,6 +34,11 @@ class Face:
         for pt in fts:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (255, 255, 255), -1)
+
+    def grab_bounding_box(self,pts):
+        cnt = np.array(pts, dtype=np.int32)       
+        x,y,w,h = cv2.boundingRect(cnt)
+        return x,y,w,h
 
     def grab_rotated_bbox(self,pts):
         cnt = np.array(pts, dtype=np.int32)
@@ -53,12 +54,11 @@ class Face:
         w = dist.euclidean((x1,y1),(x2,y2))
         if h > w:
             h,w = w,h
-
         props = {"pts": [(x,y), (x1,y1), (x2,y2), (x3,y3)], "w":w, "h":h}
         #return properties of the bounding box
         return props 
 
-    def draw_mouth_bbox(self, img):
+    def draw_mouth_lines(self, img):
         props = self.grab_rotated_bbox(self.landmarks[48:55])
         coords = props["pts"]
         x,y = coords[0] #bottom left
@@ -70,7 +70,7 @@ class Face:
         cv2.line(img,(x,y),(x1,y1),GREEN,1)
         cv2.line(img,(x1,y1),(x2,y2),GREEN,1)
 
-    def ratio(self):
+    def smile_ratio(self):
         pt = self.landmarks[0]
         pt1 = self.landmarks[16]
         pt2 = self.landmarks[24]
@@ -86,19 +86,36 @@ class Face:
         return r
 
     def is_smiling(self,img):
-        ratio = self.ratio()
+        sm_ratio = self.smile_ratio()
         if not self.debugging:
-            return ratio > 8.5
-
-        self.draw_landmarks(img,self.landmarks)
-        self.draw_mouth_bbox(img)
+            return sm_ratio > 8.5
+        self.draw_mouth_lines(img)
         (x,y,w,h) = self.convert_to_rect()
-        if ratio > 8.5:
+        if sm_ratio > 8.5:
             cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
             return True
         else:
             cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
             return False
+
+    def blink_detection(self, img):
+        lx,ly,lw,lh = self.grab_bounding_box(self.landmarks[36:42])
+        rx,ry,rw,rh = self.grab_bounding_box(self.landmarks[42:48])
+        
+        l_eye = cv2.cvtColor(img[ly:ly+lh,lx:lx+lw], cv2.COLOR_BGR2GRAY)
+        r_eye = cv2.cvtColor(img[ry:ry+rh,rx:rx+rw], cv2.COLOR_BGR2GRAY) 
+        #l_eye = cv2.GaussianBlur(l_eye,(1,1),0)
+        #r_eye = cv2.GaussianBlur(r_eye,(1,1),0)
+
+        ret,thresh1 = cv2.threshold(l_eye,50,255,cv2.THRESH_BINARY)
+        ret,thresh2 = cv2.threshold(r_eye,50,255,cv2.THRESH_BINARY)
+
+        cv2.imshow("leye", thresh1)
+        cv2.imshow("reye", thresh2)
+        
+
+        cv2.waitKey(2500)
+
 
 class Detector:
     def __init__(self,debugging=False):
@@ -111,6 +128,7 @@ class Detector:
         dlib_rects =  self.detector(gray, 1) #grab all rectangles
         faces = [Face(rect,img,self.debugging) for rect in dlib_rects] 
         for face in faces:
+            #face.blink_detection(img)
             if not face.is_smiling(img):
                 return False
         return True

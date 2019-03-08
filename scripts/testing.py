@@ -15,7 +15,10 @@ def main():
     if args.camera:
         images = VideoList('Camera')
     elif args.path:
-        time = 2500
+        if args.debugging:
+            time = 0
+        else:
+            time = 2500
         images = FrameList(args.path)
     else:
         raise Exception('must pass either feed or images') 
