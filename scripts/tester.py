@@ -37,7 +37,7 @@ class cameraFeed():
 
 #CREATE DETECTOR
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("models/shapes_predict.dat")
+predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
 def grab_faces(img):
         return detector(img, 1)
@@ -69,7 +69,7 @@ class Face:
     def is_smiling(self,img):
         (x,y,w,h) = self.convert_to_rect()
         ratio = self.ratio()
-        if ratio > 8.5 and self.eye_ratio():
+        if ratio > 8.5:
             cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
         else:
             cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
