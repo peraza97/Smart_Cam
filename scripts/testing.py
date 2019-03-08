@@ -7,6 +7,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--camera", help="using camera feed", action='store_true')
     parser.add_argument("-p", "--path", help="path to images")
+    parser.add_argument("-d", "--debugging", help="are we debugging output", action='store_true')
     args = parser.parse_args()
 
     if args.camera:
@@ -16,7 +17,7 @@ def main():
     else:
         raise Exception('must pass either feed or images') 
 
-    detector = Detector()
+    detector = Detector(debugging=args.debugging)
 
     while not images.is_finished():
         name, frame = images.get_frame()

@@ -10,12 +10,11 @@ BLUE = (255,0,0)
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
-
 class Face:
     def __init__(self, dlib_rect, img, debugging=False):
+        self.debugging = debugging
         self.dlib_rect = dlib_rect
         self.landmarks = self.extract_landmarks(img)
-        self.bbox = self.convert_to_rect()
     
     def extract_landmarks(self, img):
         return np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
@@ -32,16 +31,8 @@ class Face:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, (255, 255, 255), -1)
 
-    def is_smiling(self,img):
-        (x,y,w,h) = self.convert_to_rect()
-        ratio = self.ratio()
-        if ratio > 8.5:
-            cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
-        else:
-            cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
-
-    def draw_mouth_bbox(self, img):
-        cnt = np.array(self.landmarks[48:55], dtype=np.int32)
+    def grab_rotated_bbox(self,pts):
+        cnt = np.array(pts, dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
@@ -50,33 +41,28 @@ class Face:
         x2,y2 = box[2] #top right
         x3,y3 = box[3] #bottom right
 
-        self.draw_landmarks(img, self.landmarks)
-
-        cv2.line(img,(x,y),(x1,y1),GREEN,1)
-        cv2.line(img,(x1,y1),(x2,y2),GREEN,1)
-
-        cv2.circle(img,(x,y), 3, RED, -1)
-        cv2.circle(img,(x1,y1), 3, BLUE, -1)
-        cv2.circle(img,(x2,y2), 3, BLUE, -1)
-        cv2.circle(img,(x3,y3), 3, RED, -1)
-
-    def grab_dims(self, fts):
-        cnt = np.array(fts, dtype=np.int32)
-        rect = cv2.minAreaRect(cnt)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        x,y = box[0] #bottom left
-        x1,y1 = box[1] #top left
-        x2,y2 = box[2] #top right
-        x3,y3 = box[3] #bottom right
         h = dist.euclidean((x,y), (x1,y1))
         w = dist.euclidean((x1,y1),(x2,y2))
         if h > w:
             h,w = w,h
-        return w,h
+
+        props = {"pts": [(x,y), (x1,y1), (x2,y2), (x3,y3)], "w":w, "h":h}
+        #return properties of the bounding box
+        return props 
+
+    def draw_mouth_bbox(self, img):
+        props = self.grab_rotated_bbox(self.landmarks[48:55])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),GREEN,1)
+        cv2.line(img,(x1,y1),(x2,y2),GREEN,1)
 
     def ratio(self):
-
         pt = self.landmarks[0]
         pt1 = self.landmarks[16]
         pt2 = self.landmarks[24]
@@ -85,32 +71,36 @@ class Face:
         bbw = pt1[0,0] - pt[0,0]
         bbh = pt3[0,1] - pt2[0,1]
 
-        w,h = self.grab_dims(self.landmarks[48:55])
-
+        props = self.grab_rotated_bbox(self.landmarks[48:55])
+        w = props["w"]
+        h = props["h"]
         r = (w/bbw)/(h/bbh)
-        #print("H: {}, W: {}, BBW: {}, BBH:{}".format(int(h),int(w), int(bbw),int(bbh)))
-        #print("Norm ratio: {0:.2f}".format(r))
-        #print()
         return r
 
-    def eye_ratio(self):
-        lw, lh = self.grab_dims(self.landmarks[36:42])
-        rw, rh = self.grab_dims(self.landmarks[42:48])
+    def is_smiling(self,img):
+        ratio = self.ratio()
+        if not self.debugging:
+            return ratio > 8.5
 
-        l_ratio = lh/lw
-        r_ratio = rh/rw
-
-        print("L: {}, R: {}".format(l_ratio,r_ratio))
-
-        return l_ratio > .20 and r_ratio > .20
+        self.draw_landmarks(img,self.landmarks)
+        self.draw_mouth_bbox(img)
+        (x,y,w,h) = self.convert_to_rect()
+        if ratio > 8.5:
+            cv2.rectangle(img, (x, y), (x + w, y + h), GREEN, 2)
+            return True
+        else:
+            cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
+            return False
 
 class Detector:
-    def __init__(self):
+    def __init__(self,debugging=False):
         self.detector = dlib.get_frontal_face_detector()
+        self.debugging = debugging
 
-    def perfectPhoto(self, img, debugging=False):
-        dlib_rects =  self.detector(img, 1)
-        faces = [Face(rect,img,debugging) for rect in dlib_rects] 
+    def perfectPhoto(self, img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        dlib_rects =  self.detector(gray, 1) #grab all rectangles
+        faces = [Face(rect,img,self.debugging) for rect in dlib_rects] 
         for face in faces:
             if not face.is_smiling(img):
                 return False
