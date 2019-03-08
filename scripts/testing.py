@@ -1,8 +1,7 @@
-import argparse
-import glob 
-import xlsxwriter
 import cv2
+import argparse
 from Frames import Frames, VideoList, FrameList
+from Detector import Detector
 
 def main():
     parser = argparse.ArgumentParser()
@@ -16,25 +15,18 @@ def main():
         images = FrameList(args.path)
     else:
         raise Exception('must pass either feed or images') 
-    
-    DISPLAY = False
-    source = images.get_source()
-    folder = source.split('/')[-1]
-    workbook = xlsxwriter.Workbook('../results/'+folder+'.xlsx')
-    worksheet = workbook.add_worksheet()
-    row = 1
+
+    detector = Detector()
 
     while not images.is_finished():
         name, frame = images.get_frame()
-        worksheet.write(row, 0, name)
-        worksheet.write(row, 1, 1) #TO DO. EDIT THIS
-        row+=1
-        if DISPLAY:
-            cv2.imshow("Feed", frame)
-            k = cv2.waitKey(1)
-            if k & 0xFF == ord('q'):
-                images.stop()
+        if detector.perfectPhoto(frame):
+            print("Perfect photo")
 
-    workbook.close()
+        cv2.imshow("Feed", frame)
+        k = cv2.waitKey(1)
+        if k & 0xFF == ord('q'):
+            images.stop()
+
 if __name__ == '__main__':
     main()
