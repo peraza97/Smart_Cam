@@ -10,9 +10,12 @@ def main():
     parser.add_argument("-d", "--debugging", help="are we debugging output", action='store_true')
     args = parser.parse_args()
 
+    time = 1
+
     if args.camera:
         images = VideoList('Camera')
     elif args.path:
+        time = 2500
         images = FrameList(args.path)
     else:
         raise Exception('must pass either feed or images') 
@@ -25,7 +28,7 @@ def main():
             print("Perfect photo")
 
         cv2.imshow("Feed", frame)
-        k = cv2.waitKey(1)
+        k = cv2.waitKey(time)
         if k & 0xFF == ord('q'):
             images.stop()
 

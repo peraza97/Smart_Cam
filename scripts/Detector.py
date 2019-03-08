@@ -10,6 +10,10 @@ BLUE = (255,0,0)
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
+class FaceAlign:
+    def __init__(self):
+        pass
+
 class Face:
     def __init__(self, dlib_rect, img, debugging=False):
         self.debugging = debugging
@@ -17,7 +21,11 @@ class Face:
         self.landmarks = self.extract_landmarks(img)
     
     def extract_landmarks(self, img):
-        return np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
+        x,y,w,h = self.convert_to_rect()
+        tmp = img[y:y+h,x:x+w]
+        cv2.imshow("cropped", tmp)
+        cv2.waitKey()
+        return np.matrix([[p.x, p.y] for p in predictor(tmp).parts()])
 
     def convert_to_rect(self):
         tl = self.dlib_rect.tl_corner()
@@ -95,6 +103,7 @@ class Face:
 class Detector:
     def __init__(self,debugging=False):
         self.detector = dlib.get_frontal_face_detector()
+        sp = dlib.shape_predictor("../models/shapes_5.dat")
         self.debugging = debugging
 
     def perfectPhoto(self, img):
