@@ -1,4 +1,3 @@
-*
-!.gitignore
-!*.py
+models/
+data/
 !README.md
