@@ -44,6 +44,7 @@ class Face:
         x,y,w,h = cv2.boundingRect(cnt)
         return x,y,w,h
 
+    #grab points of bounding box, as well as dimensions based on passed in points
     def grab_rotated_bbox(self,pts):
         cnt = np.array(pts, dtype=np.int32)
         rect = cv2.minAreaRect(cnt)
@@ -136,6 +137,8 @@ class Detector:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         dlib_rects =  self.detector(gray, 1) #grab all rectangles
         faces = [Face(rect,img) for rect in dlib_rects] 
+        
+        perfect = False
         for face in faces:
             smiling = face.is_smiling(img)
             blinking = face.is_blinking(img)
@@ -150,5 +153,7 @@ class Detector:
             elif self.debugging == "both":
                 face.draw_eyes(img, eye_color)
                 face.draw_face_bbox(img, box_color)
-            
-        return smiling and not blinking
+            perfect = smiling and not blinking
+        
+        return perfect
+        
