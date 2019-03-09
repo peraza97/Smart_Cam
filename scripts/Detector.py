@@ -41,8 +41,7 @@ class Face:
             pos = (pt[0,0], pt[0,1])
             cv2.circle(img, pos, 2, color, -1)
 
-    #from points, generate a boundingbox
-    def grab_bounding_box(self,pts):
+
         cnt = np.array(pts, dtype=np.int32)       
         x,y,w,h = cv2.boundingRect(cnt)
         return x,y,w,h
@@ -162,7 +161,6 @@ class Face:
 
         return (l + r )/2 < .03
 
-
     #used to determine if eyes are blinking or not
     def draw_eyes(self, img, eye_color):
         #draw the eyes
@@ -195,6 +193,7 @@ class Detector:
         for face in faces:
             smiling = face.is_smiling(img)
             blinking = face.my_is_blinking(img)
+            perfect = smiling and not blinking
 
             #THIS IS FOR DEBUGGING
             eye_color = RED if blinking else GREEN
@@ -206,7 +205,6 @@ class Detector:
             elif self.debugging == "both":
                 face.draw_eyes(img, eye_color)
                 face.draw_face_bbox(img, box_color)
-            perfect = smiling and not blinking
         
         return perfect
         
