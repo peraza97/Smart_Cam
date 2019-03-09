@@ -7,17 +7,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--camera", help="using camera feed", action='store_true')
     parser.add_argument("-p", "--path", help="path to images")
-    parser.add_argument("-d", "--debugging", help="are we debugging output", action='store_true')
+    parser.add_argument("-d", "--debugging", help="options : both, eyes, face")
     args = parser.parse_args()
 
     time = 1
     if args.camera:
         images = VideoList('Camera')
     elif args.path:
-        if args.debugging:
-            time = 0
-        else:
-            time = 2500
+        time = 2500
         images = FrameList(args.path)
     else:
         raise Exception('must pass either feed or images') 
