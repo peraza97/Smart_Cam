@@ -53,6 +53,7 @@ class FrameList(Frames):
         super().__init__(source)
         self.list = glob.glob(self.source+'/*') 
         self.list = [x[x.rfind('/')+1:] for x in self.list]
+        self.list = [x[x.rfind('\\')+1:] for x in self.list] #DO THIS FOR WINDOWS
         self.counter = 0
 
     #overwrittern function
@@ -61,4 +62,6 @@ class FrameList(Frames):
         self.counter +=1
         if self.counter >= len(self.list):
             self.finished = True
-        return self.list[curr_ind], cv2.imread(self.source + '/' + self.list[curr_ind])
+        name = self.source + '/' + self.list[curr_ind]
+        print(name)
+        return self.list[curr_ind], cv2.imread(name)

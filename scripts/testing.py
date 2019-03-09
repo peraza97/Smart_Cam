@@ -11,7 +11,6 @@ def main():
     args = parser.parse_args()
 
     time = 1
-
     if args.camera:
         images = VideoList('Camera')
     elif args.path:
@@ -29,7 +28,6 @@ def main():
         name, frame = images.get_frame()
         if detector.perfectPhoto(frame):
             print("Perfect photo")
-
         cv2.imshow("Feed", frame)
         k = cv2.waitKey(time)
         if k & 0xFF == ord('q'):

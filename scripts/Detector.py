@@ -98,29 +98,28 @@ class Face:
             cv2.rectangle(img, (x, y), (x + w, y + h), RED, 2)
             return False
 
+    def eye_ratio(self,eye):
+        A = dist.euclidean(eye[1],eye[5])
+        B = dist.euclidean(eye[2],eye[4])
+
+        C = dist.euclidean(eye[0],eye[3])
+
+        EAR = (A+B)/(2*C)
+        return EAR
+
     def blink_detection(self, img):
-        lx,ly,lw,lh = self.grab_bounding_box(self.landmarks[36:42])
-        rx,ry,rw,rh = self.grab_bounding_box(self.landmarks[42:48])
-        
-        l_eye = cv2.cvtColor(img[ly:ly+lh,lx:lx+lw], cv2.COLOR_BGR2GRAY)
-        r_eye = cv2.cvtColor(img[ry:ry+rh,rx:rx+rw], cv2.COLOR_BGR2GRAY) 
-        #l_eye = cv2.GaussianBlur(l_eye,(1,1),0)
-        #r_eye = cv2.GaussianBlur(r_eye,(1,1),0)
-
-        ret,thresh1 = cv2.threshold(l_eye,50,255,cv2.THRESH_BINARY)
-        ret,thresh2 = cv2.threshold(r_eye,50,255,cv2.THRESH_BINARY)
-
-        cv2.imshow("leye", thresh1)
-        cv2.imshow("reye", thresh2)
-        
-
-        cv2.waitKey(2500)
-
+        left_eye = self.eye_ratio(self.landmarks[36:42])
+        right_eye = self.eye_ratio(self.landmarks[42:48])
+        self.draw_landmarks(img, self.landmarks[36:42])
+        self.draw_landmarks(img, self.landmarks[42:48])
+        EAR = (left_eye + right_eye)/2.0
+        if EAR > .25:
+            print("OPEN")
+        return EAR > .25
 
 class Detector:
     def __init__(self,debugging=False):
         self.detector = dlib.get_frontal_face_detector()
-        sp = dlib.shape_predictor("../models/shapes_5.dat")
         self.debugging = debugging
 
     def perfectPhoto(self, img):
@@ -129,6 +128,6 @@ class Detector:
         faces = [Face(rect,img,self.debugging) for rect in dlib_rects] 
         for face in faces:
             #face.blink_detection(img)
-            if not face.is_smiling(img):
+            if not face.is_smiling(img) or not face.blink_detection(img):
                 return False
         return True
