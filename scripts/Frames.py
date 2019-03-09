@@ -63,5 +63,4 @@ class FrameList(Frames):
         if self.counter >= len(self.list):
             self.finished = True
         name = self.source + '/' + self.list[curr_ind]
-        print(name)
         return self.list[curr_ind], cv2.imread(name)

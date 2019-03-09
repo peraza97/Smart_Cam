@@ -10,9 +10,7 @@ def main():
     parser.add_argument("-p", "--path", help="path to images", required=True)
     args = parser.parse_args()
 
-
     images = VideoList('Camera')
-
 
     path = args.path
     if path[-1] == '/':
@@ -20,10 +18,7 @@ def main():
 
     if not os.path.exists(path):
         os.makedirs(path)
-
-
     num = len(glob.glob(path+'/*'))
-
     while not images.is_finished():
         name, frame = images.get_frame()
 
@@ -33,7 +28,6 @@ def main():
             images.stop()
         elif k & 0xFF == ord('s'):
             save_path = path+"/" + str(num) + ".jpg"
-            print(save_path)
             cv2.imwrite(save_path, frame)
             num +=1
 

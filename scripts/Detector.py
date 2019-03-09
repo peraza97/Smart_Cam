@@ -32,6 +32,12 @@ class Face:
         br = self.dlib_rect.br_corner()
         return (tl.x, tl.y,tr.x - tl.x , br.y-tl.y )
 
+    #draw all 64 landmarks of face
+    def draw_all_landmarks(self, img):
+        for pt in self.landmarks:
+                pos = (pt[0,0], pt[0,1])
+                cv2.circle(img, pos, 2, WHITE, -1)
+
     #draw passed in landmarks
     def draw_landmarks(self, img, fts, color):
         for pt in fts:
@@ -63,6 +69,7 @@ class Face:
         #return properties of the bounding box
         return props 
 
+    #draw ratio lines around mouth
     def draw_mouth_lines(self, img):
         props = self.grab_rotated_bbox(self.landmarks[48:55])
         coords = props["pts"]
@@ -71,8 +78,30 @@ class Face:
         x2,y2 = coords[2] #top right
         x3,y3 = coords[3] #bottom right
         #draw aspect ratio lines
-        cv2.line(img,(x,y),(x1,y1),GREEN,1)
-        cv2.line(img,(x1,y1),(x2,y2),GREEN,1)
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
+
+    #draw ratio lines around all eyes
+    def draw_eye_lines(self, img):
+        props = self.grab_rotated_bbox(self.landmarks[36:42])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
+
+        props = self.grab_rotated_bbox(self.landmarks[42:48])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
 
     #helper function for is_smiling function
     def smile_ratio(self):
@@ -105,10 +134,37 @@ class Face:
 
     #function to determine if someone is blinking
     def is_blinking(self, img):
+        self.my_is_blinking(img)
         left_eye = self.eye_ratio(self.landmarks[36:42])
         right_eye = self.eye_ratio(self.landmarks[42:48])
         EAR = (left_eye + right_eye)/2.0
         return EAR < .25
+
+    #my method to test if eyes are blinking
+    def my_is_blinking(self, img):
+        l_rbbox = self.grab_rotated_bbox(self.landmarks[36:42])
+        r_rbbox = self.grab_rotated_bbox(self.landmarks[42:48])
+
+        lw = l_rbbox["w"]
+        lh = l_rbbox["h"]
+        rw = r_rbbox["w"]
+        rh = r_rbbox["h"]
+
+        pt = self.landmarks[0]
+        pt1 = self.landmarks[16]
+        pt2 = self.landmarks[24]
+        pt3 = self.landmarks[8]
+
+        bbw = pt1[0,0] - pt[0,0]
+        bbh = pt3[0,1] - pt2[0,1]
+
+        l = (lh/bbh)
+        r = (rh/bbh)
+
+        print("L_AR = {0:.5f}, R_AR = {0:.5f}".format(l, r) )
+
+        return (l + r )/2 < .03
+
 
     #used to determine if eyes are blinking or not
     def draw_eyes(self, img, eye_color):
@@ -117,6 +173,7 @@ class Face:
         rcnt = np.array(self.landmarks[42:48], dtype=np.int32)
         cv2.drawContours(img,[lcnt],0,eye_color,1)
         cv2.drawContours(img,[rcnt],0,eye_color,1)
+        self.draw_eye_lines(img)
 
     #used to detemine if face is smiling or not
     def draw_face_bbox(self, img, box_color):
@@ -124,7 +181,6 @@ class Face:
         x,y,w,h = self.convert_to_rect()
         cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
         
-
 class Detector:
     def __init__(self, debugging):
         self.detector = dlib.get_frontal_face_detector()
@@ -141,7 +197,7 @@ class Detector:
         perfect = False
         for face in faces:
             smiling = face.is_smiling(img)
-            blinking = face.is_blinking(img)
+            blinking = face.my_is_blinking(img)
 
             #THIS IS FOR DEBUGGING
             eye_color = RED if blinking else GREEN
