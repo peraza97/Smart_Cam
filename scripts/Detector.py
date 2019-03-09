@@ -18,11 +18,8 @@ class FaceAlign:
 class Face:
     def __init__(self, dlib_rect, img):
         self.dlib_rect = dlib_rect
-        self.landmarks = self.extract_landmarks(img)
+        self.landmarks = np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
     
-    def extract_landmarks(self, img):
-        return np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
-
     #convert the face dlib rect to a boundingbox
     #used for drawing the rectangle around face
     def convert_to_rect(self):
