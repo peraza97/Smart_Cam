@@ -19,6 +19,7 @@ def main():
     if not os.path.exists(path):
         os.makedirs(path)
     num = len(glob.glob(path+'/*'))
+    
     while not images.is_finished():
         name, frame = images.get_frame()
 
