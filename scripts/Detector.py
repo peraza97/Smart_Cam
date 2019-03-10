@@ -22,7 +22,13 @@ class Face:
     def __init__(self, dlib_rect, img):
         self.dlib_rect = dlib_rect
         self.landmarks = np.matrix([[p.x, p.y] for p in predictor(img, self.dlib_rect).parts()])
-    
+        pt = self.landmarks[0]
+        pt1 = self.landmarks[16]
+        pt2 = self.landmarks[24]
+        pt3 = self.landmarks[8]
+        self.w = pt1[0,0] - pt[0,0]
+        self.h = pt3[0,1] - pt2[0,1]
+
     #convert the face dlib rect to a boundingbox
     #used for drawing the rectangle around face
     def convert_to_rect(self):
@@ -37,17 +43,6 @@ class Face:
         for pt in self.landmarks:
                 pos = (pt[0,0], pt[0,1])
                 cv2.circle(img, pos, 2, WHITE, -1)
-
-    #draw passed in landmarks
-    def draw_landmarks(self, img, fts, color):
-        for pt in fts:
-            pos = (pt[0,0], pt[0,1])
-            cv2.circle(img, pos, 2, color, -1)
-
-
-        cnt = np.array(pts, dtype=np.int32)       
-        x,y,w,h = cv2.boundingRect(cnt)
-        return x,y,w,h
 
     #grab points of bounding box, as well as dimensions based on passed in points
     def grab_rotated_bbox(self,pts):
@@ -70,18 +65,10 @@ class Face:
 
     #helper function for is_smiling function
     def smile_ratio(self):
-        pt = self.landmarks[0]
-        pt1 = self.landmarks[16]
-        pt2 = self.landmarks[24]
-        pt3 = self.landmarks[8]
-
-        bbw = pt1[0,0] - pt[0,0]
-        bbh = pt3[0,1] - pt2[0,1]
-
         props = self.grab_rotated_bbox(self.landmarks[48:55])
         w = props["w"]
         h = props["h"]
-        r = (w/bbw)/(h/bbh)
+        r = (w/self.w)/(h/self.h)
         return r
     
     #function to determine if person is smiling
@@ -113,16 +100,8 @@ class Face:
         rw = r_rbbox["w"]
         rh = r_rbbox["h"]
 
-        pt = self.landmarks[0]
-        pt1 = self.landmarks[16]
-        pt2 = self.landmarks[24]
-        pt3 = self.landmarks[8]
-
-        bbw = pt1[0,0] - pt[0,0]
-        bbh = pt3[0,1] - pt2[0,1]
-
-        l = (lh/bbh)
-        r = (rh/bbh)
+        l = (lh/self.h)
+        r = (rh/self.h)
         return l, r
 
     #my method to test if eyes are blinking
@@ -186,7 +165,6 @@ class Face:
 
         self.put_text_img(img, str(round(new_r,2)), ORANGE, self.landmarks[27])
 
-    
     #put something on the image
     def put_text_img(self, img, text, color, pt):
         x = pt[0,0]
@@ -201,6 +179,7 @@ class Detector:
         self.debugging = debugging
         if self.debugging is None:
             self.debugging = "None"
+        
         self.save_path = "../Results"
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
