@@ -9,6 +9,8 @@ GREEN = (0,255,0)
 BLUE = (255,0,0)
 WHITE = (255,255,255)
 
+
+
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
 class FaceAlign:
