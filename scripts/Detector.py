@@ -10,6 +10,7 @@ RED = (0,0,255)
 GREEN = (0,255,0)
 BLUE = (255,0,0)
 WHITE = (255,255,255)
+ORANGE = (0,162,255)
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
@@ -67,40 +68,6 @@ class Face:
         #return properties of the bounding box
         return props 
 
-    #draw ratio lines around mouth
-    def draw_mouth_lines(self, img):
-        props = self.grab_rotated_bbox(self.landmarks[48:55])
-        coords = props["pts"]
-        x,y = coords[0] #bottom left
-        x1,y1 = coords[1] #top left
-        x2,y2 = coords[2] #top right
-        x3,y3 = coords[3] #bottom right
-        #draw aspect ratio lines
-        cv2.line(img,(x,y),(x1,y1),BLUE,1)
-        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
-
-    #draw ratio lines around all eyes
-    def draw_eye_lines(self, img):
-        props = self.grab_rotated_bbox(self.landmarks[36:42])
-        coords = props["pts"]
-        x,y = coords[0] #bottom left
-        x1,y1 = coords[1] #top left
-        x2,y2 = coords[2] #top right
-        x3,y3 = coords[3] #bottom right
-        #draw aspect ratio lines
-        cv2.line(img,(x,y),(x1,y1),BLUE,1)
-        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
-
-        props = self.grab_rotated_bbox(self.landmarks[42:48])
-        coords = props["pts"]
-        x,y = coords[0] #bottom left
-        x1,y1 = coords[1] #top left
-        x2,y2 = coords[2] #top right
-        x3,y3 = coords[3] #bottom right
-        #draw aspect ratio lines
-        cv2.line(img,(x,y),(x1,y1),BLUE,1)
-        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
-
     #helper function for is_smiling function
     def smile_ratio(self):
         pt = self.landmarks[0]
@@ -137,8 +104,7 @@ class Face:
         EAR = (left_eye + right_eye)/2.0
         return EAR < .25
 
-    #my method to test if eyes are blinking
-    def my_is_blinking(self):
+    def get_eye_ratios(self):
         l_rbbox = self.grab_rotated_bbox(self.landmarks[36:42])
         r_rbbox = self.grab_rotated_bbox(self.landmarks[42:48])
 
@@ -157,9 +123,11 @@ class Face:
 
         l = (lh/bbh)
         r = (rh/bbh)
+        return l, r
 
-        print("L_AR = {0:.5f}, R_AR = {0:.5f}".format(l, r) )
-
+    #my method to test if eyes are blinking
+    def my_is_blinking(self):
+        l, r = self.get_eye_ratios()
         return (l + r )/2 < .03
 
     #used to determine if eyes are blinking or not
@@ -175,7 +143,58 @@ class Face:
         #draw box around eyes
         x,y,w,h = self.convert_to_rect()
         cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
+
+    #draw ratio lines around mouth
+    def draw_mouth_lines(self, img):
+        props = self.grab_rotated_bbox(self.landmarks[48:55])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
         
+        r = self.smile_ratio()
+        self.put_text_img(img, str(round(r,2)), ORANGE, self.landmarks[50])
+
+    #draw ratio lines around all eyes
+    def draw_eye_lines(self, img):
+        l, r = self.get_eye_ratios()
+        new_r = l+r/2
+
+        props = self.grab_rotated_bbox(self.landmarks[36:42])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
+
+        props = self.grab_rotated_bbox(self.landmarks[42:48])
+        coords = props["pts"]
+        x,y = coords[0] #bottom left
+        x1,y1 = coords[1] #top left
+        x2,y2 = coords[2] #top right
+        x3,y3 = coords[3] #bottom right
+        #draw aspect ratio lines
+        cv2.line(img,(x,y),(x1,y1),BLUE,1)
+        cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
+
+        self.put_text_img(img, str(round(new_r,2)), ORANGE, self.landmarks[27])
+
+    
+    #put something on the image
+    def put_text_img(self, img, text, color, pt):
+        x = pt[0,0]
+        y = pt[0,1]
+        x-=5
+        y-=5
+        cv2.putText(img,text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, .5, color, 2, cv2.LINE_AA)
+  
 class Detector:
     def __init__(self, debugging):
         self.detector = dlib.get_frontal_face_detector()
@@ -219,7 +238,6 @@ class Detector:
             face.draw_face_bbox(img, box_color)
 
             #debugging output
-
             if self.debugging == "eyes":
                 face.draw_eye_lines(img)
             elif self.debugging == "face":

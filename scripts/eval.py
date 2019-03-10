@@ -50,7 +50,8 @@ def main():
             print(a+ ": ")
             k = cv2.waitKey()
             print(chr(k))
-            if k == ord('q'):
+            if chr(k) == 'q':
+                images.stop()
                 break
             worksheet.write(row, i+1, chr(k))
         print("moving on to next photo\n")
