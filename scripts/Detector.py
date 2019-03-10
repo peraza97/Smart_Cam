@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial import distance as dist
 from fractions import Fraction
 import glob
+import os
 
 RED = (0,0,255)
 GREEN = (0,255,0)

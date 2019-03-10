@@ -41,10 +41,10 @@ def main():
     #ITERATE OVER ALL IMAGES
     while not images.is_finished():
         name, frame = images.get_frame()
-        _,new_frame = detector.perfectPhoto(frame)
+        detector.perfectPhoto(frame)
         row+=1
         worksheet.write(row, 0, name)
-        cv2.imshow("Feed", new_frame)
+        cv2.imshow("Feed", frame)
         #collect data for current image
         for i, a in enumerate(arr):
             print(a+ ": ")
