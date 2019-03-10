@@ -34,7 +34,6 @@ def main():
     workbook = xlsxwriter.Workbook('../results/'+folder+'.xlsx')
     worksheet = workbook.add_worksheet()
     worksheet.write(row, 0, "Image Name")
-
     #fill out names of xlsx sheet
     for i, a in enumerate(arr):
         worksheet.write(row, i+1, arr[i])
@@ -42,10 +41,10 @@ def main():
     #ITERATE OVER ALL IMAGES
     while not images.is_finished():
         name, frame = images.get_frame()
-        detector.perfectPhoto(frame)
+        _,new_frame = detector.perfectPhoto(frame)
         row+=1
         worksheet.write(row, 0, name)
-        cv2.imshow("Feed", frame)
+        cv2.imshow("Feed", new_frame)
         #collect data for current image
         for i, a in enumerate(arr):
             print(a+ ": ")

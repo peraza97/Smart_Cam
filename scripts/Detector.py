@@ -3,13 +3,12 @@ import dlib
 import numpy as np
 from scipy.spatial import distance as dist
 from fractions import Fraction
+import glob
 
 RED = (0,0,255)
 GREEN = (0,255,0)
 BLUE = (255,0,0)
 WHITE = (255,255,255)
-
-
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
 
@@ -118,7 +117,7 @@ class Face:
         return r
     
     #function to determine if person is smiling
-    def is_smiling(self,img):
+    def is_smiling(self):
         sm_ratio = self.smile_ratio()
         return sm_ratio > 8.5
 
@@ -132,14 +131,13 @@ class Face:
 
     #function to determine if someone is blinking
     def is_blinking(self, img):
-        self.my_is_blinking(img)
         left_eye = self.eye_ratio(self.landmarks[36:42])
         right_eye = self.eye_ratio(self.landmarks[42:48])
         EAR = (left_eye + right_eye)/2.0
         return EAR < .25
 
     #my method to test if eyes are blinking
-    def my_is_blinking(self, img):
+    def my_is_blinking(self):
         l_rbbox = self.grab_rotated_bbox(self.landmarks[36:42])
         r_rbbox = self.grab_rotated_bbox(self.landmarks[42:48])
 
@@ -170,7 +168,6 @@ class Face:
         rcnt = np.array(self.landmarks[42:48], dtype=np.int32)
         cv2.drawContours(img,[lcnt],0,eye_color,1)
         cv2.drawContours(img,[rcnt],0,eye_color,1)
-        self.draw_eye_lines(img)
 
     #used to detemine if face is smiling or not
     def draw_face_bbox(self, img, box_color):
@@ -184,29 +181,56 @@ class Detector:
         self.debugging = debugging
         if self.debugging is None:
             self.debugging = "None"
-        print(self.debugging)
+        self.save_path = "../Results"
+        if not os.path.exists(self.save_path):
+            os.makedirs(self.save_path)
+    
+    def savePhoto(self, img):
+        num = len(glob.glob(self.path+'/*'))
+        path = self.save_path+"/" + str(num+1) + ".jpg"
+        cv2.imwrite(path, img)
+
 
     def perfectPhoto(self, img):
+        orig_img = img.copy()
+        #convert to gray scale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        dlib_rects =  self.detector(gray, 1) #grab all rectangles
+        #grab all dlib rects
+        dlib_rects =  self.detector(gray, 1) 
+        #create face objects out of rects
         faces = [Face(rect,img) for rect in dlib_rects] 
         
-        perfect = False
-        for face in faces:
-            smiling = face.is_smiling(img)
-            blinking = face.my_is_blinking(img)
-            perfect = smiling and not blinking
+        #boolean if we will save this image
+        perfect = True if len(faces) > 0 else False
 
-            #THIS IS FOR DEBUGGING
+        #iterate over the image
+        for face in faces:
+            smiling = face.is_smiling()
+            blinking = face.my_is_blinking()
+
+            if perfect:
+                perfect = smiling and not blinking
+
             eye_color = RED if blinking else GREEN
             box_color = GREEN if smiling else RED
+            #even if not debugging, helps to visualize
+            face.draw_eyes(img, eye_color)
+            face.draw_face_bbox(img, box_color)
+
+            #debugging output
+
             if self.debugging == "eyes":
-                face.draw_eyes(img, eye_color)
+                face.draw_eye_lines(img)
             elif self.debugging == "face":
-                face.draw_face_bbox(img, box_color)
+                face.draw_mouth_lines(img)
             elif self.debugging == "both":
-                face.draw_eyes(img, eye_color)
-                face.draw_face_bbox(img, box_color)
+                face.draw_eye_lines(img)
+                face.draw_mouth_lines(img)
         
-        return perfect
+        #should we save this photo?
+        if perfect and self.debugging == "None":
+            self.savePhoto(orig_img)
+            
+    
+        return
         
