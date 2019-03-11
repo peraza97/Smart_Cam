@@ -41,8 +41,9 @@ def main():
         name, frame = images.get_frame()
         value = detector.perfectPhoto(frame)
         if args.display:
+            frame = cv2.resize(frame,(400,400), interpolation=cv2.INTER_AREA)
             cv2.imshow("Feed", frame)
-            k = cv2.waitKey(2500)
+            k = cv2.waitKey(1000)
             if k & 0xFF == ord('q'):
                 images.stop()
         row+=1
