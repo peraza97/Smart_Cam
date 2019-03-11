@@ -193,19 +193,19 @@ class Detector:
         smiling = True
         eye_open = True
         if self.option == "eyes":
-            eye_open = face.my_eyes_open()
+            eye_open = face.my_eyes_open() #get eyes
             eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
-            smiling = face.is_smiling()
+            smiling = face.is_smiling() #get smile
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         elif self.option == "both":
-            eye_open = face.my_eyes_open()
-            smiling = face.is_smiling()
+            eye_open = face.my_eyes_open() #get eyes
             eye_color = GREEN if eye_open else RED
-            box_color = GREEN if smiling else RED
             face.draw_eyes(img, eye_color)
+            smiling = face.is_smiling() #get smile
+            box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         return smiling and eye_open
 
