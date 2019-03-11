@@ -11,6 +11,7 @@ def main():
     parser.add_argument("-c", "--camera", help="using camera feed", action='store_true')
     parser.add_argument("-p", "--path", help="path to images")
     parser.add_argument("-o", "--option", help="options : both, eyes, smile",required=True)
+    parser.add_argument("-d", "--display", help="do you want to display",action='store_true')
     args = parser.parse_args()
 
     if args.camera:
@@ -39,6 +40,11 @@ def main():
     while not images.is_finished():
         name, frame = images.get_frame()
         value = detector.perfectPhoto(frame)
+        if args.display:
+            cv2.imshow("Feed", frame)
+            k = cv2.waitKey(2500)
+            if k & 0xFF == ord('q'):
+                images.stop()
         row+=1
         worksheet.write(row, 0, name)
         worksheet.write(row,1, value*1)
