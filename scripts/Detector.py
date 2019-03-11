@@ -73,6 +73,17 @@ class Face:
     
     #function to determine if person is smiling
     def is_smiling(self):
+        mouth = self.landmarks[48:68]
+
+        A = dist.euclidean(mouth[3], mouth[9])
+        B = dist.euclidean(mouth[2], mouth[10])
+        C = dist.euclidean(mouth[4], mouth[8])
+        avg = (A+B+C)/3
+        D = dist.euclidean(mouth[0], mouth[6])
+        mar=avg/D
+    return mar <=.3 or mar > .38 
+
+    def my_is_smiling(self):
         sm_ratio = self.smile_ratio()
         return sm_ratio > 7
 
