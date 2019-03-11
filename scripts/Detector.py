@@ -74,7 +74,7 @@ class Face:
     #function to determine if person is smiling
     def is_smiling(self):
         sm_ratio = self.smile_ratio()
-        return sm_ratio > 8.5
+        return sm_ratio > 7
 
     #helper function to determine if eye_blinking
     def eye_ratio(self,eye):
@@ -174,11 +174,11 @@ class Face:
         cv2.putText(img,text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, .5, color, 2, cv2.LINE_AA)
   
 class Detector:
-    def __init__(self, debugging):
+    def __init__(self,option,debugging,save):
         self.detector = dlib.get_frontal_face_detector()
+        self.option = option
         self.debugging = debugging
-        if self.debugging is None:
-            self.debugging = "None"
+        self.save = save
         
         self.save_path = "../Results"
         if not os.path.exists(self.save_path):
@@ -189,6 +189,34 @@ class Detector:
         path = self.save_path+"/" + str(num+1) + ".jpg"
         cv2.imwrite(path, img)
 
+    def get_perfect(self, face, img):
+        smiling = True
+        blinking = False
+        if self.option == "eyes":
+            blinking = face.my_is_blinking()
+            eye_color = RED if blinking else GREEN
+            face.draw_eyes(img, eye_color)
+        elif self.option == "smile":
+            smiling = face.is_smiling()
+            box_color = GREEN if smiling else RED
+            face.draw_face_bbox(img, box_color)
+        elif self.option == "both":
+            blinking = face.my_is_blinking()
+            smiling = face.is_smiling()
+            eye_color = RED if blinking else GREEN
+            box_color = GREEN if smiling else RED
+            face.draw_eyes(img, eye_color)
+            face.draw_face_bbox(img, box_color)
+        return smiling and not blinking
+
+    def show_debug(self, face, img):
+        if self.option == "eyes":
+            face.draw_eye_lines(img)
+        elif self.option == "smile":
+            face.draw_mouth_lines(img)
+        elif self.option == "both":
+            face.draw_eye_lines(img)
+            face.draw_mouth_lines(img)
 
     def perfectPhoto(self, img):
         orig_img = img.copy()
@@ -204,31 +232,16 @@ class Detector:
 
         #iterate over the image
         for face in faces:
-            smiling = face.is_smiling()
-            blinking = face.my_is_blinking()
-
+            temp = self.get_perfect(face, img)
+            #reassign photo
             if perfect:
-                perfect = smiling and not blinking
-
-            eye_color = RED if blinking else GREEN
-            box_color = GREEN if smiling else RED
-            #even if not debugging, helps to visualize
-            face.draw_eyes(img, eye_color)
-            face.draw_face_bbox(img, box_color)
-
-            #debugging output
-            if self.debugging == "eyes":
-                face.draw_eye_lines(img)
-            elif self.debugging == "face":
-                face.draw_mouth_lines(img)
-            elif self.debugging == "both":
-                face.draw_eye_lines(img)
-                face.draw_mouth_lines(img)
-        
+                perfect = temp
+            #show debug output
+            if self.debugging:
+                self.show_debug(face,img)
+        print("Is this perfect? ", perfect)
         #should we save this photo?
-        if perfect and self.debugging == "None":
+        if perfect and self.save:
             self.savePhoto(orig_img)
-            
-    
-        return
         
+        return perfect
