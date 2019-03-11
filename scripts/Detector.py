@@ -85,11 +85,11 @@ class Face:
         return EAR
 
     #function to determine if someone is blinking
-    def is_blinking(self, img):
+    def eyes_open(self, img):
         left_eye = self.eye_ratio(self.landmarks[36:42])
         right_eye = self.eye_ratio(self.landmarks[42:48])
         EAR = (left_eye + right_eye)/2.0
-        return EAR < .25
+        return EAR > .25
 
     def get_eye_ratios(self):
         l_rbbox = self.grab_rotated_bbox(self.landmarks[36:42])
@@ -105,9 +105,9 @@ class Face:
         return l, r
 
     #my method to test if eyes are blinking
-    def my_is_blinking(self):
+    def my_eyes_open(self):
         l, r = self.get_eye_ratios()
-        return (l + r )/2 < .03
+        return (l + r )/2 > .03
 
     #used to determine if eyes are blinking or not
     def draw_eyes(self, img, eye_color):
@@ -191,23 +191,23 @@ class Detector:
 
     def get_perfect(self, face, img):
         smiling = True
-        blinking = False
+        e_open = True
         if self.option == "eyes":
-            blinking = face.my_is_blinking()
-            eye_color = RED if blinking else GREEN
+            e_open = face.my_eyes_open()
+            eye_color = GREEN if e_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
             smiling = face.is_smiling()
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         elif self.option == "both":
-            blinking = face.my_is_blinking()
+            blinke_open = face.my_eyes_open()
             smiling = face.is_smiling()
-            eye_color = RED if blinking else GREEN
+            eye_color = GREEN if e_open else RED
             box_color = GREEN if smiling else RED
             face.draw_eyes(img, eye_color)
             face.draw_face_bbox(img, box_color)
-        return smiling and not blinking
+        return smiling and e_open
 
     def show_debug(self, face, img):
         if self.option == "eyes":
