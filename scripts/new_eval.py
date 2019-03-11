@@ -43,6 +43,11 @@ def main():
         worksheet.write(row, 0, name)
         worksheet.write(row,1, value*1)
     
+    last_row = row + 1
+    worksheet.write(last_row+1,0, "Predicted Yes")
+    worksheet.write(last_row+1,1, "=COUNTIF(B2:B{},1)".format(last_row) )
+    worksheet.write(last_row+2 ,0, "Predicted No")
+    worksheet.write(last_row+2,1, "=COUNTIF(B2:B{},0)".format(last_row) )
     workbook.close()
    
 if __name__ == '__main__':
