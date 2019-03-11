@@ -191,23 +191,23 @@ class Detector:
 
     def get_perfect(self, face, img):
         smiling = True
-        e_open = True
+        eye_open = True
         if self.option == "eyes":
-            e_open = face.my_eyes_open()
-            eye_color = GREEN if e_open else RED
+            eye_open = face.my_eyes_open()
+            eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
             smiling = face.is_smiling()
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         elif self.option == "both":
-            blinke_open = face.my_eyes_open()
+            eye_open = face.my_eyes_open()
             smiling = face.is_smiling()
-            eye_color = GREEN if e_open else RED
+            eye_color = GREEN if eye_open else RED
             box_color = GREEN if smiling else RED
             face.draw_eyes(img, eye_color)
             face.draw_face_bbox(img, box_color)
-        return smiling and e_open
+        return smiling and eye_open
 
     def show_debug(self, face, img):
         if self.option == "eyes":
