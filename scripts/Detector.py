@@ -62,15 +62,17 @@ class Face:
     
     def haar_smile(self, img):
         x,y,w,h = self.convert_to_rect()
-        roi_gray = cv2.cvtColor(img[y:y+h,x:x+w], cv2.COLOR_BGR2GRAY)
-            smile = smile_cascade.detectMultiScale(
+        
+        roi = img[y:y+h,x:x+w]
+        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        smile = smile_cascade.detectMultiScale(
             roi_gray,
             scaleFactor=1.7,
             minNeighbors=22,
             minSize=(25, 25),
             flags=cv2.CASCADE_SCALE_IMAGE
         )
-        return length(smile) > 1
+        return len(smile) > 1
 
     #function to determine if person is smiling
     def is_smiling(self):
@@ -142,6 +144,8 @@ class Face:
         #draw box around eyes
         x,y,w,h = self.convert_to_rect()
         cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
+        if x < 0:
+            print("X<0")
 
     #draw ratio lines around mouth
     def draw_mouth_lines(self, img):
@@ -217,7 +221,8 @@ class Detector:
             eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
-            smiling = face.is_smiling() #get smile
+            #smiling = face.haar_smile(img)
+            #smiling = face.my_is_smiling() #get smile
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         elif self.option == "both":
