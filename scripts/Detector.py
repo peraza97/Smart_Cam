@@ -13,10 +13,7 @@ WHITE = (255,255,255)
 ORANGE = (0,162,255)
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
-
-class FaceAlign:
-    def __init__(self):
-        pass
+smile_cascade = cv2.CascadeClassifier("../models/haarcascade_smile.xml")
 
 class Face:
     def __init__(self, dlib_rect, img):
@@ -63,6 +60,18 @@ class Face:
         #return properties of the bounding box
         return props 
     
+    def haar_smile(self, img):
+        x,y,w,h = self.convert_to_rect()
+        roi_gray = cv2.cvtColor(img[y:y+h,x:x+w], cv2.COLOR_BGR2GRAY)
+            smile = smile_cascade.detectMultiScale(
+            roi_gray,
+            scaleFactor=1.7,
+            minNeighbors=22,
+            minSize=(25, 25),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+        return length(smile) > 1
+
     #function to determine if person is smiling
     def is_smiling(self):
         mouth = self.landmarks[48:68]
