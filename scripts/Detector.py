@@ -220,9 +220,10 @@ class Detector:
             #show debug output
             if self.debugging:
                 self.show_debug(face,img)
-        print("Is this perfect? ", perfect)
+        print("Is this photo perfect? ", perfect)
         #should we save this photo?
         if perfect and self.save:
             self.savePhoto(orig_img)
-        
+            print("Saving photo")
+        print()
         return perfect
