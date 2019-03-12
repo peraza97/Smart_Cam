@@ -62,14 +62,6 @@ class Face:
         props = {"pts": [(x,y), (x1,y1), (x2,y2), (x3,y3)], "w":w, "h":h}
         #return properties of the bounding box
         return props 
-
-    #helper function for is_smiling function
-    def smile_ratio(self):
-        props = self.grab_rotated_bbox(self.landmarks[48:55])
-        w = props["w"]
-        h = props["h"]
-        r = (w/self.w)/(h/self.h)
-        return r
     
     #function to determine if person is smiling
     def is_smiling(self):
@@ -81,7 +73,15 @@ class Face:
         avg = (A+B+C)/3
         D = dist.euclidean(mouth[0], mouth[6])
         mar=avg/D
-    return mar <=.3 or mar > .38 
+        return mar <=.3 or mar > .38 
+
+    #helper function for is_smiling function
+    def smile_ratio(self):
+        props = self.grab_rotated_bbox(self.landmarks[48:55])
+        w = props["w"]
+        h = props["h"]
+        r = (w/self.w)/(h/self.h)
+        return r
 
     def my_is_smiling(self):
         sm_ratio = self.smile_ratio()
@@ -103,8 +103,8 @@ class Face:
         return EAR > .25
 
     def get_eye_ratios(self):
-        l_rbbox = self.grab_rotated_bbox(self.landmarks[36:42])
-        r_rbbox = self.grab_rotated_bbox(self.landmarks[42:48])
+        l_rbbox = self.grab_rotated_bbox(self.landmarks[36:40])
+        r_rbbox = self.grab_rotated_bbox(self.landmarks[42:46])
 
         lw = l_rbbox["w"]
         lh = l_rbbox["h"]
@@ -113,12 +113,12 @@ class Face:
 
         l = (lh/self.h)
         r = (rh/self.h)
-        return l, r
+        return l,r
 
     #my method to test if eyes are blinking
     def my_eyes_open(self):
         l, r = self.get_eye_ratios()
-        return (l + r )/2 > .03
+        return (l+r)/2 > .038
 
     #used to determine if eyes are blinking or not
     def draw_eyes(self, img, eye_color):
@@ -152,7 +152,7 @@ class Face:
     #draw ratio lines around all eyes
     def draw_eye_lines(self, img):
         l, r = self.get_eye_ratios()
-        new_r = l+r/2
+        new_r = (l+r)/2
 
         props = self.grab_rotated_bbox(self.landmarks[36:42])
         coords = props["pts"]

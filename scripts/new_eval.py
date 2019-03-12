@@ -35,7 +35,8 @@ def main():
     worksheet.write(row, 0, "Image Name")
     worksheet.write(row, 1, "Results")
 
-
+    t = 0
+    f = 0
     #ITERATE OVER ALL IMAGES
     while not images.is_finished():
         name, frame = images.get_frame()
@@ -49,6 +50,10 @@ def main():
         row+=1
         worksheet.write(row, 0, name)
         worksheet.write(row,1, value*1)
+        if value:
+            t+=1
+        else:
+            f+=1
     
     last_row = row + 1
     worksheet.write(last_row+1,0, "Predicted Yes")
@@ -56,6 +61,7 @@ def main():
     worksheet.write(last_row+2 ,0, "Predicted No")
     worksheet.write(last_row+2,1, "=COUNTIF(B2:B{},0)".format(last_row) )
     workbook.close()
+    print("Predicted Yes: {}, Predicted No: {}".format(t,f))
    
 if __name__ == '__main__':
     main()
