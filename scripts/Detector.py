@@ -59,48 +59,6 @@ class Face:
         props = {"pts": [(x,y), (x1,y1), (x2,y2), (x3,y3)], "w":w, "h":h}
         #return properties of the bounding box
         return props 
-    
-    def haar_smile(self, img):
-        x,y,w,h = self.convert_to_rect()
-        hh,ww = img.shape[:2]
-        if x >= 0 and x + w < ww:
-            #do nothin
-            pass
-        elif x < 0: 
-            w = w + x
-            x = 0
-        else:
-            w = x + w - ww 
-        if y >= 0 and y + h < hh:
-            #do nothing
-            pass
-        elif y < 0: 
-            h = h + y
-            y = 0
-        else:
-            h = y + h - hh 
-        roi = img[y:y+h,x:x+w] #get roi for haar cascade
-        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        smile = smile_cascade.detectMultiScale(
-            roi_gray,
-            scaleFactor=1.7,
-            minNeighbors=22,
-            minSize=(25, 25),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        return len(smile) > 1
-
-    #function to determine if person is smiling
-    def is_smiling(self):
-        mouth = self.landmarks[48:68]
-
-        A = dist.euclidean(mouth[3], mouth[9])
-        B = dist.euclidean(mouth[2], mouth[10])
-        C = dist.euclidean(mouth[4], mouth[8])
-        avg = (A+B+C)/3
-        D = dist.euclidean(mouth[0], mouth[6])
-        mar=avg/D
-        return mar <=.3 or mar > .38 
 
     #helper function for is_smiling function
     def smile_ratio(self):
@@ -113,21 +71,6 @@ class Face:
     def my_is_smiling(self):
         sm_ratio = self.smile_ratio()
         return sm_ratio > 7
-
-    #helper function to determine if eye_blinking
-    def eye_ratio(self,eye):
-        A = dist.euclidean(eye[1],eye[5])
-        B = dist.euclidean(eye[2],eye[4])
-        C = dist.euclidean(eye[0],eye[3])
-        EAR = (A+B)/(2*C)
-        return EAR
-
-    #function to determine if someone is blinking
-    def eyes_open(self, img):
-        left_eye = self.eye_ratio(self.landmarks[36:42])
-        right_eye = self.eye_ratio(self.landmarks[42:48])
-        EAR = (left_eye + right_eye)/2.0
-        return EAR > .25
 
     def get_eye_ratios(self):
         l_rbbox = self.grab_rotated_bbox(self.landmarks[36:40])
@@ -235,15 +178,14 @@ class Detector:
             eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
-            smiling = face.haar_smile(img)
-            #smiling = face.my_is_smiling() #get smile
+            smiling = face.my_is_smiling() #get smile
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         elif self.option == "both":
             eye_open = face.my_eyes_open() #get eyes
             eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
-            smiling = face.is_smiling() #get smile
+            smiling = face.my_is_smiling() #get smile
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
         return smiling and eye_open
