@@ -23,6 +23,9 @@ class Frames(ABC):
     @abstractmethod
     def get_frame(self):
         pass
+    @abstractmethod
+    def get_size(self):
+        pass
 
 class VideoList(Frames):
     def __init__(self,source):
@@ -47,6 +50,10 @@ class VideoList(Frames):
     #overwrittern function
     def get_frame(self):
         return 'webcam', self.frame
+    
+    def get_size(self):
+        return int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH)),int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
 
 class FrameList(Frames):
     def __init__(self, source):
@@ -55,6 +62,8 @@ class FrameList(Frames):
         self.list = [x[x.rfind('/')+1:] for x in self.list]
         self.list = [x[x.rfind('\\')+1:] for x in self.list] #DO THIS FOR WINDOWS
         self.counter = 0
+        self.w = -1
+        self.h = -1
 
     #overwrittern function
     def get_frame(self):
@@ -63,4 +72,9 @@ class FrameList(Frames):
         if self.counter >= len(self.list):
             self.finished = True
         name = self.source + '/' + self.list[curr_ind]
-        return self.list[curr_ind], cv2.imread(name)
+        img = cv2.imread(name)
+        self.h,self.w = img.shape[:2]
+        return self.list[curr_ind], img
+
+    def get_size(self):
+        return self.w, self.h

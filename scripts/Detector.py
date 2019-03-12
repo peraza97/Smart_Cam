@@ -62,8 +62,24 @@ class Face:
     
     def haar_smile(self, img):
         x,y,w,h = self.convert_to_rect()
-        
-        roi = img[y:y+h,x:x+w]
+        hh,ww = img.shape[:2]
+        if x >= 0 and x + w < ww:
+            #do nothin
+            pass
+        elif x < 0: 
+            w = w + x
+            x = 0
+        else:
+            w = x + w - ww 
+        if y >= 0 and y + h < hh:
+            #do nothing
+            pass
+        elif y < 0: 
+            h = h + y
+            y = 0
+        else:
+            h = y + h - hh 
+        roi = img[y:y+h,x:x+w] #get roi for haar cascade
         roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         smile = smile_cascade.detectMultiScale(
             roi_gray,
@@ -144,8 +160,6 @@ class Face:
         #draw box around eyes
         x,y,w,h = self.convert_to_rect()
         cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
-        if x < 0:
-            print("X<0")
 
     #draw ratio lines around mouth
     def draw_mouth_lines(self, img):
@@ -221,7 +235,7 @@ class Detector:
             eye_color = GREEN if eye_open else RED
             face.draw_eyes(img, eye_color)
         elif self.option == "smile":
-            #smiling = face.haar_smile(img)
+            smiling = face.haar_smile(img)
             #smiling = face.my_is_smiling() #get smile
             box_color = GREEN if smiling else RED
             face.draw_face_bbox(img, box_color)
