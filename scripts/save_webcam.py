@@ -6,19 +6,13 @@ import glob
 import os
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--path", help="path to images", required=True)
-    args = parser.parse_args()
-
     images = VideoList('Camera')
 
-    path = args.path
-    if path[-1] == '/':
-        path = path[:-1] #remove any ending / just in case
+    save_path = '../data/Webcam'
 
-    if not os.path.exists(path):
-        os.makedirs(path)
-    num = len(glob.glob(path+'/*'))
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    num = len(glob.glob(save_path+'/*'))
     
     while not images.is_finished():
         name, frame = images.get_frame()
@@ -28,8 +22,8 @@ def main():
         if k & 0xFF == ord('q'):
             images.stop()
         elif k & 0xFF == ord('s'):
-            save_path = path+"/" + str(num) + ".jpg"
-            cv2.imwrite(save_path, frame)
+            gen_path = save_path+"/" + str(num) + ".jpg"
+            cv2.imwrite(gen_path, frame)
             num +=1
 
 if __name__ == '__main__':

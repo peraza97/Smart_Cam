@@ -16,7 +16,7 @@ def main():
     if args.camera:
         images = VideoList('Camera')
     elif args.path:
-        time = 1000
+        time = 2000
         images = FrameList(args.path)
     else:
         raise Exception('must pass either feed or images') 
@@ -25,7 +25,7 @@ def main():
 
     while not images.is_finished():
         #grab a frame
-        _, frame = images.get_frame()
+        name, frame = images.get_frame()
         #detect perfect photo
         detector.perfectPhoto(frame)
         #show the photo
@@ -33,6 +33,8 @@ def main():
         k = cv2.waitKey(time)
         if k & 0xFF == ord('q'):
             images.stop()
+        elif k & 0xFF == ord('s'):
+            cv2.imwrite('../Results/'+name+'.jpg',frame)
 
 if __name__ == '__main__':
     main()

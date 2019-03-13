@@ -13,7 +13,6 @@ WHITE = (255,255,255)
 ORANGE = (0,162,255)
 
 predictor = dlib.shape_predictor("../models/shapes_predict.dat")
-smile_cascade = cv2.CascadeClassifier("../models/haarcascade_smile.xml")
 
 class Face:
     def __init__(self, dlib_rect, img):
@@ -25,7 +24,7 @@ class Face:
         pt3 = self.landmarks[8]
         self.w = pt1[0,0] - pt[0,0]
         self.h = pt3[0,1] - pt2[0,1]
-
+    
     #convert the face dlib rect to a boundingbox
     #used for drawing the rectangle around face
     def convert_to_rect(self):
@@ -144,7 +143,7 @@ class Face:
         cv2.line(img,(x,y),(x1,y1),BLUE,1)
         cv2.line(img,(x1,y1),(x2,y2),BLUE,1)
 
-        self.put_text_img(img, str(round(new_r,2)), ORANGE, self.landmarks[27])
+        self.put_text_img(img, str(round(new_r,3)), ORANGE, self.landmarks[27])
 
     #put something on the image
     def put_text_img(self, img, text, color, pt):
@@ -160,13 +159,13 @@ class Detector:
         self.option = option
         self.debugging = debugging
         self.save = save
-        
-        self.save_path = "../Results"
+        #generate the save folder
+        self.save_path = "../data/Perfect_photo"
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
     
     def savePhoto(self, img):
-        num = len(glob.glob(self.path+'/*'))
+        num = len(glob.glob(self.save_path+'/*'))
         path = self.save_path+"/" + str(num+1) + ".jpg"
         cv2.imwrite(path, img)
 
@@ -207,10 +206,8 @@ class Detector:
         dlib_rects =  self.detector(gray, 1) 
         #create face objects out of rects
         faces = [Face(rect,img) for rect in dlib_rects] 
-        
         #boolean if we will save this image
         perfect = True if len(faces) > 0 else False
-
         #iterate over the image
         for face in faces:
             temp = self.get_perfect(face, img)
