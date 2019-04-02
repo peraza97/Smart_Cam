@@ -1,1 +1,1 @@
-# ee146_project
+#Smart Camera
